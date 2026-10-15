@@ -10,11 +10,12 @@
         <p class="text-muted small mb-0">Real-time parking telemetry, reservations, and simulated revenue analytics.</p>
     </div>
     <div class="d-flex align-items-center gap-2">
-        <button id="btn-refresh-stats" class="btn btn-outline-secondary btn-sm d-flex align-items-center gap-1 shadow-sm">
+        <button id="btn-refresh-stats"
+            class="btn btn-outline-secondary btn-sm d-flex align-items-center gap-1 shadow-sm">
             <i class="bi bi-arrow-clockwise"></i>
             <span>Sync Live</span>
         </button>
-        <a href="{{ url_for('reservations.new_reservation') }}" class="btn btn-primary btn-sm d-flex align-items-center gap-1 shadow-sm">
+        <a href="#" class="btn btn-primary btn-sm d-flex align-items-center gap-1 shadow-sm">
             <i class="bi bi-plus-lg"></i>
             <span>New Booking</span>
         </a>
@@ -99,7 +100,8 @@
                 <i class="bi bi-cash-stack"></i>
             </div>
             <div class="stat-info">
-                <div class="stat-value text-success" id="val-total-revenue">{{ payment_stats.total_revenue | currency }}</div>
+                <div class="stat-value text-success" id="val-total-revenue">{{ payment_stats.total_revenue | currency }}
+                </div>
                 <div class="stat-label">Revenue Collected</div>
             </div>
         </div>
@@ -110,7 +112,8 @@
                 <i class="bi bi-hourglass-split"></i>
             </div>
             <div class="stat-info">
-                <div class="stat-value text-warning" id="val-pending-amount">{{ payment_stats.pending_amount | currency }}</div>
+                <div class="stat-value text-warning" id="val-pending-amount">{{ payment_stats.pending_amount | currency
+                    }}</div>
                 <div class="stat-label">Pending Charges</div>
             </div>
         </div>
@@ -171,7 +174,8 @@
                 <h6 class="card-title-modern">
                     <i class="bi bi-calendar-check text-primary"></i> Recent Reservations
                 </h6>
-                <a href="{{ url_for('reservations.index') }}" class="btn btn-sm btn-link text-decoration-none p-0 small">
+                <a href="{{ url_for('reservations.index') }}"
+                    class="btn btn-sm btn-link text-decoration-none p-0 small">
                     View All <i class="bi bi-chevron-right"></i>
                 </a>
             </div>
@@ -191,7 +195,8 @@
                         {% for r in recent_reservations %}
                         <tr>
                             <td>
-                                <a href="{{ url_for('reservations.details', res_id=r.id) }}" class="fw-semibold text-primary text-decoration-none">
+                                <a href="{{ url_for('reservations.details', res_id=r.id) }}"
+                                    class="fw-semibold text-primary text-decoration-none">
                                     {{ r.reservation_code }}
                                 </a>
                             </td>
@@ -205,7 +210,8 @@
                             </td>
                             <td>
                                 <div class="small">{{ r.start_time | datetime_format('%b %d, %I:%M %p') }}</div>
-                                <div class="text-muted small" style="font-size: 0.75rem;">to {{ r.end_time | datetime_format('%I:%M %p') }}</div>
+                                <div class="text-muted small" style="font-size: 0.75rem;">to {{ r.end_time |
+                                    datetime_format('%I:%M %p') }}</div>
                             </td>
                             <td>
                                 <span class="badge-status {{ r.status }}">
@@ -213,7 +219,8 @@
                                 </span>
                             </td>
                             <td class="text-end">
-                                <a href="{{ url_for('reservations.details', res_id=r.id) }}" class="btn btn-sm btn-light border py-1 px-2" title="View details">
+                                <a href="{{ url_for('reservations.details', res_id=r.id) }}"
+                                    class="btn btn-sm btn-light border py-1 px-2" title="View details">
                                     <i class="bi bi-eye"></i>
                                 </a>
                             </td>
@@ -256,11 +263,13 @@
                         <tr>
                             <td>
                                 <div class="fw-semibold text-dark">{{ p.payment_code }}</div>
-                                <div class="text-muted small text-truncate" style="font-size: 0.72rem; max-width: 110px;">{{ p.transaction_ref }}</div>
+                                <div class="text-muted small text-truncate"
+                                    style="font-size: 0.72rem; max-width: 110px;">{{ p.transaction_ref }}</div>
                             </td>
                             <td>
                                 <div class="text-truncate" style="max-width: 120px;">{{ p.customer_name }}</div>
-                                <span class="badge bg-light text-secondary border" style="font-size: 0.7rem;">{{ p.plate_number }}</span>
+                                <span class="badge bg-light text-secondary border" style="font-size: 0.7rem;">{{
+                                    p.plate_number }}</span>
                             </td>
                             <td>
                                 <span class="fw-bold text-dark">{{ p.amount | currency }}</span>
@@ -271,7 +280,8 @@
                                 </span>
                             </td>
                             <td class="text-end">
-                                <a href="{{ url_for('payments.receipt', payment_id=p.id) }}" class="btn btn-sm btn-light border py-1 px-2 text-primary" title="Print receipt">
+                                <a href="{{ url_for('payments.receipt', payment_id=p.id) }}"
+                                    class="btn btn-sm btn-light border py-1 px-2 text-primary" title="Print receipt">
                                     <i class="bi bi-printer"></i>
                                 </a>
                             </td>
