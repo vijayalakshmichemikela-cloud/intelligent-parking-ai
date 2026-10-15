@@ -5,7 +5,7 @@
 {% block content %}
 <!-- Page Header -->
 <div class="mb-4">
-    <a href="{{ url_for('reservations.index') }}" class="text-decoration-none text-muted small d-inline-flex align-items-center gap-1 mb-2">
+    <a href="{{ url_for('reservations.reservations_index') }}" class="text-decoration-none text-muted small d-inline-flex align-items-center gap-1 mb-2">
         <i class="bi bi-arrow-left"></i> Back to Reservations
     </a>
     <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
@@ -20,7 +20,7 @@
         </div>
         <div class="d-flex gap-2">
             {% if res.status == 'reserved' %}
-            <form method="POST" action="{{ url_for('occupancy.check_in') }}">
+            <form method="POST" action="{{ url_for('parking.check_in') }}">
                 <input type="hidden" name="reservation_id" value="{{ res.id }}">
                 <button type="submit" class="btn btn-success btn-sm shadow-sm">
                     <i class="bi bi-box-arrow-in-right me-1"></i> Check In Vehicle
@@ -30,7 +30,7 @@
                 <i class="bi bi-x-circle me-1"></i> Cancel Booking
             </button>
             {% elif res.status == 'active' %}
-            <form method="POST" action="{{ url_for('occupancy.check_out') }}">
+            <form method="POST" action="{{ url_for('parking.check_out') }}">
                 <input type="hidden" name="reservation_id" value="{{ res.id }}">
                 <button type="submit" class="btn btn-primary btn-sm shadow-sm">
                     <i class="bi bi-box-arrow-right me-1"></i> Check Out Vehicle
@@ -39,7 +39,7 @@
             {% endif %}
 
             {% if res.payment_id %}
-            <a href="{{ url_for('payments.receipt', payment_id=res.payment_id) }}" class="btn btn-outline-secondary btn-sm">
+            <a href="{{ url_for('reservations.payment_receipt', payment_id=res.payment_id) }}" class="btn btn-outline-secondary btn-sm">
                 <i class="bi bi-printer me-1"></i> View Receipt
             </a>
             {% endif %}
@@ -163,7 +163,7 @@
                     <i class="bi bi-credit-card-2-front me-1"></i> Process Demo Payment
                 </button>
                 {% elif res.payment_id %}
-                <a href="{{ url_for('payments.receipt', payment_id=res.payment_id) }}" class="btn btn-outline-primary w-100">
+                <a href="{{ url_for('reservations.payment_receipt', payment_id=res.payment_id) }}" class="btn btn-outline-primary w-100">
                     <i class="bi bi-printer me-1"></i> Print Formal Receipt
                 </a>
                 {% endif %}
@@ -187,7 +187,7 @@
                 <h5 class="modal-title fs-6 fw-bold"><i class="bi bi-wallet2 me-2"></i>Simulated Payment Gateway</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
-            <form method="POST" action="{{ url_for('payments.process_demo', payment_id=res.payment_id) }}">
+            <form method="POST" action="{{ url_for('reservations.process_demo', payment_id=res.payment_id) }}">
                 <div class="modal-body p-4">
                     <div class="alert alert-info small mb-3">
                         <i class="bi bi-info-circle me-1"></i> <strong>Demo Gateway Sandbox:</strong> No actual card charge will occur. Select an outcome to simulate.

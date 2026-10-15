@@ -13,7 +13,7 @@
 
 <!-- Search Card -->
 <div class="card-modern p-3 mb-4">
-    <form method="GET" action="{{ url_for('customers.index') }}" class="row g-2 align-items-center">
+    <form method="GET" action="{{ url_for('auth.customers_index') }}" class="row g-2 align-items-center">
         <div class="col-12 col-md-6">
             <div class="input-group input-group-sm">
                 <span class="input-group-text bg-light text-muted"><i class="bi bi-search"></i></span>
@@ -23,7 +23,7 @@
         <div class="col-6 col-md-2 d-flex gap-2">
             <button type="submit" class="btn btn-primary btn-sm w-100">Search</button>
             {% if search %}
-            <a href="{{ url_for('customers.index') }}" class="btn btn-outline-secondary btn-sm" title="Clear Search">
+            <a href="{{ url_for('auth.customers_index') }}" class="btn btn-outline-secondary btn-sm" title="Clear Search">
                 <i class="bi bi-x-lg"></i>
             </a>
             {% endif %}
@@ -56,7 +56,7 @@
                 {% for c in customers %}
                 <tr>
                     <td>
-                        <a href="{{ url_for('customers.details', customer_id=c.id) }}" class="fw-bold text-primary text-decoration-none">
+                        <a href="{{ url_for('auth.customer_details', customer_id=c.id) }}" class="fw-bold text-primary text-decoration-none">
                             {{ c.name }}
                         </a>
                     </td>
@@ -85,7 +85,7 @@
                         <span class="text-muted small">{{ c.created_at | datetime_format('%b %d, %Y') }}</span>
                     </td>
                     <td class="text-end">
-                        <a href="{{ url_for('customers.details', customer_id=c.id) }}" class="btn btn-sm btn-light border py-1 px-2" title="View Full Profile">
+                        <a href="{{ url_for('auth.customer_details', customer_id=c.id) }}" class="btn btn-sm btn-light border py-1 px-2" title="View Full Profile">
                             <i class="bi bi-person-lines-fill me-1"></i> Profile
                         </a>
                     </td>

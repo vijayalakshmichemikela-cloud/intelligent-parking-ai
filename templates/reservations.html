@@ -10,7 +10,7 @@
         <p class="text-muted small mb-0">Manage customer bookings, schedule time windows, track vehicle arrivals, and audit histories.</p>
     </div>
     <div class="d-flex align-items-center gap-2">
-        <a href="{{ url_for('reservations.export_csv') }}" class="btn btn-outline-secondary btn-sm d-flex align-items-center gap-1 shadow-sm">
+        <a href="{{ url_for('reservations.export_reservations_csv') }}" class="btn btn-outline-secondary btn-sm d-flex align-items-center gap-1 shadow-sm">
             <i class="bi bi-download"></i>
             <span>Export CSV</span>
         </a>
@@ -23,7 +23,7 @@
 
 <!-- Search & Filter Card -->
 <div class="card-modern p-3 mb-4">
-    <form method="GET" action="{{ url_for('reservations.index') }}" class="row g-2 align-items-center">
+    <form method="GET" action="{{ url_for('reservations.reservations_index') }}" class="row g-2 align-items-center">
         <div class="col-12 col-md-4">
             <div class="input-group input-group-sm">
                 <span class="input-group-text bg-light text-muted"><i class="bi bi-search"></i></span>
@@ -52,7 +52,7 @@
         <div class="col-6 col-md-2 d-flex gap-2">
             <button type="submit" class="btn btn-primary btn-sm w-100">Filter</button>
             {% if search or selected_status or date_from or date_to %}
-            <a href="{{ url_for('reservations.index') }}" class="btn btn-outline-secondary btn-sm" title="Clear Filters">
+            <a href="{{ url_for('reservations.reservations_index') }}" class="btn btn-outline-secondary btn-sm" title="Clear Filters">
                 <i class="bi bi-x-lg"></i>
             </a>
             {% endif %}
@@ -89,7 +89,7 @@
                 {% for r in reservations %}
                 <tr>
                     <td>
-                        <a href="{{ url_for('reservations.details', res_id=r.id) }}" class="fw-bold text-primary text-decoration-none">
+                        <a href="{{ url_for('reservations.reservation_details', res_id=r.id) }}" class="fw-bold text-primary text-decoration-none">
                             {{ r.reservation_code }}
                         </a>
                         <div class="text-muted small" style="font-size: 0.72rem;">{{ r.created_at | datetime_format('%b %d, %H:%M') }}</div>
@@ -134,13 +134,13 @@
                     </td>
                     <td class="text-end">
                         <div class="btn-group btn-group-sm">
-                            <a href="{{ url_for('reservations.details', res_id=r.id) }}" class="btn btn-light border" title="View Details">
+                            <a href="{{ url_for('reservations.reservation_details', res_id=r.id) }}" class="btn btn-light border" title="View Details">
                                 <i class="bi bi-eye"></i>
                             </a>
 
                             {% if r.status == 'reserved' %}
                             <!-- Check In Shortcut -->
-                            <form method="POST" action="{{ url_for('occupancy.check_in') }}" class="d-inline">
+                                <form method="POST" action="{{ url_for('parking.check_in') }}" class="d-inline">
                                 <input type="hidden" name="reservation_id" value="{{ r.id }}">
                                 <button type="submit" class="btn btn-light border text-success" title="Check-In Vehicle">
                                     <i class="bi bi-box-arrow-in-right"></i>
@@ -153,7 +153,7 @@
                             </button>
                             {% elif r.status == 'active' %}
                             <!-- Check Out Shortcut -->
-                            <form method="POST" action="{{ url_for('occupancy.check_out') }}" class="d-inline">
+                                <form method="POST" action="{{ url_for('parking.check_out') }}" class="d-inline">
                                 <input type="hidden" name="reservation_id" value="{{ r.id }}">
                                 <button type="submit" class="btn btn-light border text-primary" title="Check-Out Vehicle">
                                     <i class="bi bi-box-arrow-right"></i>

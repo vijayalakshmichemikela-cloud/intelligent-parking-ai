@@ -174,7 +174,7 @@
                 <h6 class="card-title-modern">
                     <i class="bi bi-calendar-check text-primary"></i> Recent Reservations
                 </h6>
-                <a href="{{ url_for('reservations.index') }}"
+                <a href="{{ url_for('reservations.reservations_index') }}"
                     class="btn btn-sm btn-link text-decoration-none p-0 small">
                     View All <i class="bi bi-chevron-right"></i>
                 </a>
@@ -195,7 +195,7 @@
                         {% for r in recent_reservations %}
                         <tr>
                             <td>
-                                <a href="{{ url_for('reservations.details', res_id=r.id) }}"
+                                <a href="{{ url_for('reservations.reservation_details', res_id=r.id) }}"
                                     class="fw-semibold text-primary text-decoration-none">
                                     {{ r.reservation_code }}
                                 </a>
@@ -219,7 +219,7 @@
                                 </span>
                             </td>
                             <td class="text-end">
-                                <a href="{{ url_for('reservations.details', res_id=r.id) }}"
+                                <a href="{{ url_for('reservations.reservation_details', res_id=r.id) }}"
                                     class="btn btn-sm btn-light border py-1 px-2" title="View details">
                                     <i class="bi bi-eye"></i>
                                 </a>
@@ -243,7 +243,7 @@
                 <h6 class="card-title-modern">
                     <i class="bi bi-receipt-cutoff text-success"></i> Latest Transactions
                 </h6>
-                <a href="{{ url_for('payments.index') }}" class="btn btn-sm btn-link text-decoration-none p-0 small">
+                <a href="{{ url_for('reservations.payments_index') }}" class="btn btn-sm btn-link text-decoration-none p-0 small">
                     View All <i class="bi bi-chevron-right"></i>
                 </a>
             </div>
@@ -280,7 +280,7 @@
                                 </span>
                             </td>
                             <td class="text-end">
-                                <a href="{{ url_for('payments.receipt', payment_id=p.id) }}"
+                                <a href="{{ url_for('reservations.payment_receipt', payment_id=p.id) }}"
                                     class="btn btn-sm btn-light border py-1 px-2 text-primary" title="Print receipt">
                                     <i class="bi bi-printer"></i>
                                 </a>
