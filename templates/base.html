@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Smart Parking System{% endblock %} | Commercial Management</title>
+    
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    
+    <!-- Custom Design System Stylesheet -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    
+    <!-- Chart.js 4 -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+
+<div class="app-wrapper">
+    <!-- Sidebar Overlay for Mobile -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <!-- Dark Navy Admin Sidebar -->
+    <aside class="sidebar" id="appSidebar">
+        <div class="sidebar-brand">
+            <div class="brand-icon">
+                <i class="bi bi-p-square-fill"></i>
+            </div>
+            <div>
+                <span class="d-block" style="font-size: 1.05rem; line-height: 1.2;">SmartPark</span>
+                <span class="d-block text-muted" style="font-size: 0.7rem; font-weight: 500; letter-spacing: 1px;">MANAGEMENT</span>
+            </div>
+        </div>
+
+        <ul class="sidebar-menu">
+            <li class="sidebar-item">
+                <a href="{{ url_for('dashboard.index') }}" class="sidebar-link {% if request.endpoint == 'dashboard.index' %}active{% endif %}">
+                    <i class="bi bi-grid-1x2-fill"></i>
+                    <span>Dashboard</span>
+                </a>
+            </li>
+            <li class="sidebar-item">
+                <a href="{{ url_for('parking.slots_list') }}" class="sidebar-link {% if request.endpoint and request.endpoint.startswith('parking.') %}active{% endif %}">
+                    <i class="bi bi-signpost-split-fill"></i>
+                    <span>Parking Spaces</span>
+                </a>
+            </li>
+            <li class="sidebar-item">
+                <a href="{{ url_for('reservations.reservations_index') }}" class="sidebar-link {% if request.endpoint and request.endpoint.startswith('reservations.') %}active{% endif %}">
+                    <i class="bi bi-calendar-check-fill"></i>
+                    <span>Reservations</span>
+                </a>
+            </li>
+            <li class="sidebar-item">
+                <a href="{{ url_for('reservations.payments_index') }}" class="sidebar-link {% if request.endpoint and request.endpoint.startswith('reservations.') and 'payment' in request.path %}active{% endif %}">
+                    <i class="bi bi-credit-card-2-front-fill"></i>
+                    <span>Payment Gateway</span>
+                </a>
+            </li>
+            <li class="sidebar-item">
+                <a href="{{ url_for('parking.occupancy_index') }}" class="sidebar-link {% if request.endpoint == 'parking.occupancy_index' %}active{% endif %}">
+                    <i class="bi bi-speedometer2"></i>
+                    <span>Live Occupancy</span>
+                </a>
+            </li>
+            <li class="sidebar-item">
+                <a href="{{ url_for('auth.customers_index') }}" class="sidebar-link {% if request.endpoint and ('customer' in (request.endpoint or '')) %}active{% endif %}">
+                    <i class="bi bi-people-fill"></i>
+                    <span>Customers</span>
+                </a>
+            </li>
+        </ul>
+
+        <div class="sidebar-footer">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+                <span class="text-muted small">Database Engine</span>
+                {% if db_info.engine == 'MySQL' %}
+                    <span class="badge bg-success-subtle text-success border border-success-subtle" style="font-size: 0.7rem;">
+                        <i class="bi bi-database-check me-1"></i>MySQL
+                    </span>
+                {% else %}
+                    <span class="badge bg-warning-subtle text-warning border border-warning-subtle" style="font-size: 0.7rem;" title="Automatic local fallback active">
+                        <i class="bi bi-database-fill-gear me-1"></i>SQLite Fallback
+                    </span>
+                {% endif %}
+            </div>
+            <div class="text-muted small text-truncate">
+                <i class="bi bi-hdd-network me-1"></i>{{ db_info.database }}
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Wrapper -->
+    <div class="main-wrapper">
+        <!-- Top Navbar -->
+        <header class="top-navbar">
+            <div class="d-flex align-items-center gap-3">
+                <button class="btn btn-sm btn-light d-lg-none" id="sidebarToggle" type="button">
+                    <i class="bi bi-list fs-5"></i>
+                </button>
+                <div class="d-none d-md-flex align-items-center text-muted small">
+                    <i class="bi bi-clock me-1 text-primary"></i>
+                    <span id="liveClockDisplay">Live System</span>
+                </div>
+            </div>
+
+            <div class="d-flex align-items-center gap-3">
+                <a href="{{ url_for('reservations.new_reservation') }}" class="btn btn-sm btn-primary d-none d-sm-inline-flex align-items-center">
+                    <i class="bi bi-plus-circle me-1"></i> Quick Booking
+                </a>
+
+                <!-- Admin Profile Dropdown -->
+                <div class="dropdown">
+                    <button class="btn btn-light btn-sm dropdown-toggle d-flex align-items-center gap-2 border" type="button" data-bs-toggle="dropdown">
+                        <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center" style="width: 28px; height: 28px; font-size: 0.8rem; font-weight: 600;">
+                            {{ session.get('admin_name', 'A')[0] }}
+                        </div>
+                        <span class="d-none d-sm-inline fw-semibold" style="font-size: 0.85rem;">{{ session.get('admin_name', 'Admin') }}</span>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+                        <li><h6 class="dropdown-header">Signed in as {{ session.get('admin_username', 'admin') }}</h6></li>
+                        <li><a class="dropdown-item small" href="{{ url_for('dashboard.index') }}"><i class="bi bi-speedometer2 me-2"></i>Dashboard</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item small text-danger" href="{{ url_for('auth.logout') }}"><i class="bi bi-box-arrow-right me-2"></i>Sign Out</a></li>
+                    </ul>
+                </div>
+            </div>
+        </header>
+
+        <!-- Body Content -->
+        <main class="content-body">
+            <!-- Flash Notifications -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }} alert-dismissible fade show shadow-sm" role="alert" style="border-radius: 8px;">
+                            <div class="d-flex align-items-center gap-2">
+                                {% if category == 'success' %}
+                                    <i class="bi bi-check-circle-fill text-success fs-5"></i>
+                                {% elif category == 'danger' %}
+                                    <i class="bi bi-exclamation-octagon-fill text-danger fs-5"></i>
+                                {% elif category == 'warning' %}
+                                    <i class="bi bi-exclamation-triangle-fill text-warning fs-5"></i>
+                                {% else %}
+                                    <i class="bi bi-info-circle-fill text-info fs-5"></i>
+                                {% endif %}
+                                <div>{{ message }}</div>
+                            </div>
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+</div>
+
+<!-- Live Toast Notification Container -->
+<div class="toast-container position-fixed bottom-0 end-0 p-3 no-print" style="z-index: 1090;">
+    <div id="liveToast" class="toast align-items-center text-bg-dark border-0 shadow" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="d-flex">
+            <div class="toast-body d-flex align-items-center gap-2">
+                <i class="bi bi-arrow-repeat text-info"></i>
+                <span id="toast-message">Data updated</span>
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+    </div>
+</div>
+
+<!-- Bootstrap 5 JS Bundle -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- Mobile Sidebar Script -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const sidebar = document.getElementById('appSidebar');
+        const overlay = document.getElementById('sidebarOverlay');
+        const toggleBtn = document.getElementById('sidebarToggle');
+
+        if (toggleBtn && sidebar && overlay) {
+            toggleBtn.addEventListener('click', function() {
+                sidebar.classList.toggle('show');
+                overlay.classList.toggle('show');
+            });
+            overlay.addEventListener('click', function() {
+                sidebar.classList.remove('show');
+                overlay.classList.remove('show');
+            });
+        }
+
+        // Live Clock
+        function updateClock() {
+            const clockEl = document.getElementById('liveClockDisplay');
+            if (clockEl) {
+                const now = new Date();
+                clockEl.innerText = now.toLocaleString('en-US', { 
+                    weekday: 'short', month: 'short', day: 'numeric', 
+                    hour: '2-digit', minute: '2-digit', second: '2-digit' 
+                });
+            }
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+    });
+</script>
+
+<!-- Single combined JavaScript file for the entire application -->
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+
+{% block extra_scripts %}{% endblock %}
+
+</body>
+</html>

@@ -1,0 +1,235 @@
+{% extends "base.html" %}
+
+{% block title %}Payment Management & Simulated Gateway{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+    <div>
+        <h2 class="h4 fw-bold mb-1">Payment Management & Simulated Gateway</h2>
+        <p class="text-muted small mb-0">Audit parking fee settlements, execute sandbox transactions, and issue receipts.</p>
+    </div>
+    <div class="d-flex align-items-center gap-2">
+        <a href="{{ url_for('payments.export_csv') }}" class="btn btn-outline-secondary btn-sm d-flex align-items-center gap-1 shadow-sm">
+            <i class="bi bi-download"></i>
+            <span>Export CSV Report</span>
+        </a>
+    </div>
+</div>
+
+<!-- Simulated Gateway Notice Alert -->
+<div class="alert alert-primary d-flex align-items-center gap-2 py-2 mb-4 shadow-sm" role="alert" style="border-radius: 8px;">
+    <i class="bi bi-shield-lock-fill fs-5 text-primary"></i>
+    <div class="small">
+        <strong>Simulated Payment Gateway Active:</strong> This sandbox gateway processes demo payments, generates unique transaction references, and verifies duplicate protection without charging real money.
+    </div>
+</div>
+
+<!-- Revenue Summary Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-12 col-md-4">
+        <div class="stat-card">
+            <div class="stat-icon success">
+                <i class="bi bi-cash-stack"></i>
+            </div>
+            <div class="stat-info">
+                <div class="stat-value text-success">{{ summary.total_revenue | currency }}</div>
+                <div class="stat-label">Total Revenue Collected</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-md-4">
+        <div class="stat-card">
+            <div class="stat-icon warning">
+                <i class="bi bi-hourglass-split"></i>
+            </div>
+            <div class="stat-info">
+                <div class="stat-value text-warning">{{ summary.pending_amount | currency }}</div>
+                <div class="stat-label">Pending Receivable</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-md-4">
+        <div class="stat-card">
+            <div class="stat-icon primary">
+                <i class="bi bi-check2-all"></i>
+            </div>
+            <div class="stat-info">
+                <div class="stat-value">{{ summary.paid_transactions_count }}</div>
+                <div class="stat-label">Paid Transactions</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Search & Filter Card -->
+<div class="card-modern p-3 mb-4">
+    <form method="GET" action="{{ url_for('payments.index') }}" class="row g-2 align-items-center">
+        <div class="col-12 col-md-4">
+            <div class="input-group input-group-sm">
+                <span class="input-group-text bg-light text-muted"><i class="bi bi-search"></i></span>
+                <input type="text" class="form-control" name="search" placeholder="Search ref, code, customer, plate..." value="{{ search }}">
+            </div>
+        </div>
+
+        <div class="col-6 col-md-2">
+            <select name="status" class="form-select form-select-sm">
+                <option value="">All Statuses</option>
+                <option value="paid" {% if selected_status == 'paid' %}selected{% endif %}>Paid</option>
+                <option value="pending" {% if selected_status == 'pending' %}selected{% endif %}>Pending</option>
+                <option value="failed" {% if selected_status == 'failed' %}selected{% endif %}>Failed</option>
+            </select>
+        </div>
+
+        <div class="col-6 col-md-2">
+            <input type="date" name="date_from" class="form-control form-control-sm" value="{{ date_from }}" title="Start Date Filter">
+        </div>
+
+        <div class="col-6 col-md-2">
+            <input type="date" name="date_to" class="form-control form-control-sm" value="{{ date_to }}" title="End Date Filter">
+        </div>
+
+        <div class="col-6 col-md-2 d-flex gap-2">
+            <button type="submit" class="btn btn-primary btn-sm w-100">Filter</button>
+            {% if search or selected_status or date_from or date_to %}
+            <a href="{{ url_for('payments.index') }}" class="btn btn-outline-secondary btn-sm" title="Clear Filters">
+                <i class="bi bi-x-lg"></i>
+            </a>
+            {% endif %}
+        </div>
+    </form>
+</div>
+
+<!-- Payments Table Card -->
+<div class="card-modern">
+    <div class="card-header-modern">
+        <h6 class="card-title-modern">
+            <i class="bi bi-receipt text-primary"></i>
+            <span>Transaction Ledger ({{ payments|length }})</span>
+        </h6>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-modern align-middle">
+            <thead>
+                <tr>
+                    <th>Payment Code</th>
+                    <th>Reservation Code</th>
+                    <th>Customer / Plate</th>
+                    <th>Slot</th>
+                    <th>Amount</th>
+                    <th>Payment Method</th>
+                    <th>Transaction Reference</th>
+                    <th>Status</th>
+                    <th>Timestamp</th>
+                    <th class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in payments %}
+                <tr>
+                    <td>
+                        <span class="fw-bold text-dark">{{ p.payment_code }}</span>
+                    </td>
+                    <td>
+                        <a href="{{ url_for('reservations.details', res_id=p.reservation_id) }}" class="fw-semibold text-primary text-decoration-none">
+                            {{ p.reservation_code }}
+                        </a>
+                    </td>
+                    <td>
+                        <div class="fw-medium">{{ p.customer_name }}</div>
+                        <span class="badge bg-light text-dark border font-monospace" style="font-size: 0.72rem;">{{ p.plate_number }}</span>
+                    </td>
+                    <td>
+                        <span class="fw-bold">{{ p.slot_number }}</span>
+                    </td>
+                    <td>
+                        <span class="fw-bold fs-6 {% if p.status == 'paid' %}text-success{% else %}text-dark{% endif %}">
+                            ${{ "%.2f"|format(p.amount) }}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="small text-muted">{{ p.payment_method }}</span>
+                    </td>
+                    <td>
+                        <span class="font-monospace small text-muted">{{ p.transaction_ref }}</span>
+                    </td>
+                    <td>
+                        <span class="badge-status {{ p.status }}">
+                            <span class="status-dot {{ p.status }}"></span> {{ p.status }}
+                        </span>
+                    </td>
+                    <td>
+                        <div class="small text-muted">{{ p.payment_date | datetime_format }}</div>
+                    </td>
+                    <td class="text-end">
+                        <div class="btn-group btn-group-sm">
+                            {% if p.status != 'paid' %}
+                            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#payModal{{ p.id }}" title="Simulate Demo Payment">
+                                <i class="bi bi-credit-card me-1"></i> Pay
+                            </button>
+                            {% else %}
+                            <a href="{{ url_for('payments.receipt', payment_id=p.id) }}" class="btn btn-light border text-primary" title="Print Receipt">
+                                <i class="bi bi-printer me-1"></i> Receipt
+                            </a>
+                            {% endif %}
+                        </div>
+
+                        <!-- Modal for Demo Payment -->
+                        {% if p.status != 'paid' %}
+                        <div class="modal fade" id="payModal{{ p.id }}" tabindex="-1" aria-hidden="true">
+                            <div class="modal-dialog modal-dialog-centered">
+                                <div class="modal-content border-0 shadow text-start">
+                                    <div class="modal-header bg-dark text-white">
+                                        <h5 class="modal-title fs-6 fw-bold"><i class="bi bi-wallet2 me-2"></i>Process Demo Payment</h5>
+                                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                    </div>
+                                    <form method="POST" action="{{ url_for('payments.process_demo', payment_id=p.id) }}">
+                                        <div class="modal-body p-4">
+                                            <div class="text-center py-2 bg-light rounded border mb-3">
+                                                <span class="text-muted small d-block">Amount Due</span>
+                                                <span class="fw-bold fs-3 text-primary">${{ "%.2f"|format(p.amount) }}</span>
+                                                <div class="text-muted small">For {{ p.reservation_code }} ({{ p.customer_name }})</div>
+                                            </div>
+
+                                            <div class="mb-3">
+                                                <label class="form-label small fw-semibold">Payment Channel</label>
+                                                <select name="payment_method" class="form-select">
+                                                    <option value="Credit Card (Demo)">Credit Card (Visa/Mastercard Demo)</option>
+                                                    <option value="UPI / QR (Demo)">UPI / Instant QR</option>
+                                                    <option value="Cash Counter">Cash Counter Settlement</option>
+                                                </select>
+                                            </div>
+
+                                            <div class="mb-3">
+                                                <label class="form-label small fw-semibold">Simulate Outcome</label>
+                                                <select name="simulate_status" class="form-select">
+                                                    <option value="paid" selected>Success (Approved & Settled)</option>
+                                                    <option value="failed">Decline (Simulated Failed Authorization)</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="modal-footer bg-light">
+                                            <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                                            <button type="submit" class="btn btn-success btn-sm">Process Payment</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="10" class="text-center py-5 text-muted">
+                        <i class="bi bi-credit-card-2-front fs-2 d-block mb-2 text-secondary"></i>
+                        No payment records found matching your filters.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

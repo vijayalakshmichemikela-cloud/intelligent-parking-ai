@@ -1,0 +1,170 @@
+{% extends "base.html" %}
+
+{% block title %}{{ customer.name }} - Customer Profile{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="mb-4">
+    <a href="{{ url_for('customers.index') }}" class="text-decoration-none text-muted small d-inline-flex align-items-center gap-1 mb-2">
+        <i class="bi bi-arrow-left"></i> Back to Customers
+    </a>
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+        <div>
+            <h2 class="h4 fw-bold mb-1">{{ customer.name }}</h2>
+            <p class="text-muted small mb-0">Customer Profile &bull; Account Created on {{ customer.created_at | datetime_format('%B %d, %Y') }}</p>
+        </div>
+        <div>
+            <a href="{{ url_for('reservations.new_reservation') }}" class="btn btn-primary btn-sm shadow-sm">
+                <i class="bi bi-calendar-plus me-1"></i> New Booking for Customer
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <!-- Contact Info Card -->
+    <div class="col-12 col-md-6">
+        <div class="card-modern p-4 h-100">
+            <h6 class="fw-bold text-dark border-bottom pb-2 mb-3">
+                <i class="bi bi-person-vcard text-primary me-1"></i> Contact Information
+            </h6>
+            <div class="mb-2">
+                <span class="text-muted small d-block">Phone Number</span>
+                <span class="fw-semibold">{{ customer.phone or 'Not provided' }}</span>
+            </div>
+            <div class="mb-2">
+                <span class="text-muted small d-block">Email Address</span>
+                <span class="fw-semibold">{{ customer.email or 'Not provided' }}</span>
+            </div>
+            <div>
+                <span class="text-muted small d-block">Customer ID</span>
+                <span class="font-monospace text-muted">CUST-{{ "%05d"|format(customer.id) }}</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Vehicles Registered Card -->
+    <div class="col-12 col-md-6">
+        <div class="card-modern p-4 h-100">
+            <h6 class="fw-bold text-dark border-bottom pb-2 mb-3">
+                <i class="bi bi-car-front text-primary me-1"></i> Registered Vehicles ({{ vehicles|length }})
+            </h6>
+            <div class="d-flex flex-column gap-2">
+                {% for v in vehicles %}
+                <div class="p-2 bg-light rounded border d-flex justify-content-between align-items-center">
+                    <div>
+                        <span class="badge bg-dark font-monospace text-white px-2 py-1 fs-6">{{ v.plate_number }}</span>
+                        <span class="small text-muted ms-2">{{ v.vehicle_type }} &bull; {{ v.vehicle_model or 'Standard' }}</span>
+                    </div>
+                    <span class="text-muted small">Registered {{ v.created_at | datetime_format('%b %Y') }}</span>
+                </div>
+                {% else %}
+                <div class="text-muted small py-2">No vehicles registered yet.</div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Reservation History Card -->
+<div class="card-modern mb-4">
+    <div class="card-header-modern">
+        <h6 class="card-title-modern">
+            <i class="bi bi-calendar-check text-primary"></i> Reservation History ({{ reservations|length }})
+        </h6>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-modern align-middle">
+            <thead>
+                <tr>
+                    <th>Code</th>
+                    <th>Vehicle Plate</th>
+                    <th>Slot & Zone</th>
+                    <th>Time Window</th>
+                    <th>Duration</th>
+                    <th>Amount</th>
+                    <th>Status</th>
+                    <th>Payment</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in reservations %}
+                <tr>
+                    <td>
+                        <a href="{{ url_for('reservations.details', res_id=r.id) }}" class="fw-bold text-primary text-decoration-none">
+                            {{ r.reservation_code }}
+                        </a>
+                    </td>
+                    <td>
+                        <span class="badge bg-light text-dark border font-monospace">{{ r.plate_number }}</span>
+                    </td>
+                    <td>
+                        <span class="fw-bold">{{ r.slot_number }}</span> ({{ r.area_name }})
+                    </td>
+                    <td>
+                        <div class="small">{{ r.start_time | datetime_format('%b %d, %H:%M') }} &rarr; {{ r.end_time | datetime_format('%b %d, %H:%M') }}</div>
+                    </td>
+                    <td>{{ r.duration_hours }} hrs</td>
+                    <td><span class="fw-bold">${{ "%.2f"|format(r.estimated_amount) }}</span></td>
+                    <td>
+                        <span class="badge-status {{ r.status }}">{{ r.status }}</span>
+                    </td>
+                    <td>
+                        {% if r.payment_status == 'paid' %}
+                            <span class="badge bg-success-subtle text-success border border-success-subtle">Paid</span>
+                        {% else %}
+                            <span class="badge bg-warning-subtle text-warning border border-warning-subtle">Pending</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="8" class="text-center py-4 text-muted">No reservations recorded for this customer yet.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Payment History Card -->
+<div class="card-modern">
+    <div class="card-header-modern">
+        <h6 class="card-title-modern">
+            <i class="bi bi-receipt-cutoff text-success"></i> Transaction History ({{ payments|length }})
+        </h6>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-modern align-middle">
+            <thead>
+                <tr>
+                    <th>Payment Code</th>
+                    <th>Reservation</th>
+                    <th>Amount</th>
+                    <th>Method</th>
+                    <th>Transaction Ref</th>
+                    <th>Status</th>
+                    <th>Timestamp</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in payments %}
+                <tr>
+                    <td><span class="fw-bold">{{ p.payment_code }}</span></td>
+                    <td><span class="text-muted">{{ p.reservation_code }}</span></td>
+                    <td><span class="fw-bold text-success">${{ "%.2f"|format(p.amount) }}</span></td>
+                    <td>{{ p.payment_method }}</td>
+                    <td><span class="font-monospace small text-muted">{{ p.transaction_ref }}</span></td>
+                    <td><span class="badge-status {{ p.status }}">{{ p.status }}</span></td>
+                    <td><span class="text-muted small">{{ p.payment_date | datetime_format }}</span></td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="7" class="text-center py-4 text-muted">No payments on record.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+
+{% block title %}New Parking Reservation{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+    <a href="{{ url_for('reservations.index') }}" class="text-decoration-none text-muted small d-inline-flex align-items-center gap-1 mb-2">
+        <i class="bi bi-arrow-left"></i> Back to Reservations
+    </a>
+    <h2 class="h4 fw-bold mb-1">Create New Parking Reservation</h2>
+    <p class="text-muted small mb-0">Book a parking space with automatic conflict checks and live pricing calculation.</p>
+</div>
+
+<form method="POST" action="{{ url_for('reservations.handle_create') }}" id="reservationForm">
+    <div class="row g-4">
+        <!-- Left Column: Booking Details -->
+        <div class="col-12 col-lg-8">
+            <!-- 1. Customer Information Card -->
+            <div class="card-modern p-4 mb-4">
+                <h5 class="fs-6 fw-bold mb-3 text-dark d-flex align-items-center gap-2">
+                    <i class="bi bi-person-badge text-primary"></i> 1. Customer Information
+                </h5>
+                <div class="row g-3">
+                    <div class="col-12 col-md-6">
+                        <label for="customer_name" class="form-label small fw-semibold">Customer Full Name *</label>
+                        <input type="text" class="form-control" id="customer_name" name="customer_name" placeholder="e.g. John Doe" required>
+                    </div>
+                    <div class="col-12 col-md-6">
+                        <label for="customer_phone" class="form-label small fw-semibold">Contact Phone Number</label>
+                        <input type="tel" class="form-control" id="customer_phone" name="customer_phone" placeholder="e.g. +1 555-0199">
+                    </div>
+                    <div class="col-12">
+                        <label for="customer_email" class="form-label small fw-semibold">Email Address (Optional)</label>
+                        <input type="email" class="form-control" id="customer_email" name="customer_email" placeholder="e.g. john.doe@example.com">
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. Vehicle Information Card -->
+            <div class="card-modern p-4 mb-4">
+                <h5 class="fs-6 fw-bold mb-3 text-dark d-flex align-items-center gap-2">
+                    <i class="bi bi-car-front text-primary"></i> 2. Vehicle Details
+                </h5>
+                <div class="row g-3">
+                    <div class="col-12 col-md-5">
+                        <label for="vehicle_plate" class="form-label small fw-semibold">License Plate Number *</label>
+                        <input type="text" class="form-control font-monospace" id="vehicle_plate" name="vehicle_plate" placeholder="e.g. CA-8892-TX" style="text-transform: uppercase;" required>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <label for="vehicle_type" class="form-label small fw-semibold">Vehicle Category</label>
+                        <select class="form-select" id="vehicle_type" name="vehicle_type">
+                            <option value="Sedan">Sedan</option>
+                            <option value="SUV">SUV</option>
+                            <option value="Electric">Electric (EV)</option>
+                            <option value="Compact">Compact / Hatchback</option>
+                            <option value="Truck">Truck / Van</option>
+                        </select>
+                    </div>
+                    <div class="col-6 col-md-4">
+                        <label for="vehicle_model" class="form-label small fw-semibold">Make & Model</label>
+                        <input type="text" class="form-control" id="vehicle_model" name="vehicle_model" placeholder="e.g. Toyota Camry">
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. Time Schedule & Slot Picker Card -->
+            <div class="card-modern p-4 mb-4">
+                <h5 class="fs-6 fw-bold mb-3 text-dark d-flex align-items-center gap-2">
+                    <i class="bi bi-clock-history text-primary"></i> 3. Schedule & Parking Space
+                </h5>
+                
+                <div class="row g-3 mb-3">
+                    <div class="col-12 col-md-6">
+                        <label for="start_time" class="form-label small fw-semibold">Start Date & Time *</label>
+                        <input type="datetime-local" class="form-control" id="start_time" name="start_time" value="{{ default_start }}" required>
+                        <div class="form-text">Must be a current or future time.</div>
+                    </div>
+                    <div class="col-12 col-md-6">
+                        <label for="end_time" class="form-label small fw-semibold">End Date & Time *</label>
+                        <input type="datetime-local" class="form-control" id="end_time" name="end_time" value="{{ default_end }}" required>
+                        <div class="form-text">Must be later than start time.</div>
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center mb-3 p-2 bg-light rounded border">
+                    <span class="small text-muted"><i class="bi bi-lightning-charge text-warning me-1"></i> Filter only slots that are free during this exact timeframe:</span>
+                    <button type="button" class="btn btn-sm btn-outline-primary" id="btn-check-available">
+                        <i class="bi bi-funnel me-1"></i> Filter Available Slots
+                    </button>
+                </div>
+                <div id="avail-slots-count"></div>
+
+                <div class="mb-3">
+                    <label for="slot_id" class="form-label small fw-semibold">Select Parking Slot *</label>
+                    <select class="form-select" id="slot_id" name="slot_id" required>
+                        <option value="">-- Choose Parking Slot --</option>
+                        {% for s in all_slots %}
+                            {% if s.status != 'maintenance' %}
+                            <option value="{{ s.id }}" {% if preselected_slot_id == s.id|string %}selected{% endif %}>
+                                {{ s.slot_number }} ({{ s.area_name }} - {{ s.slot_type|upper }} @ ${{ "%.2f"|format(s.hourly_rate) }}/hr)
+                            </option>
+                            {% endif %}
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div>
+                    <label for="notes" class="form-label small fw-semibold">Booking Notes / Remarks (Optional)</label>
+                    <textarea class="form-control" id="notes" name="notes" rows="2" placeholder="e.g. Requires EV charging, customer arriving with luggage"></textarea>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column: Live Pricing & Confirmation Card -->
+        <div class="col-12 col-lg-4">
+            <div class="card-modern p-4 position-sticky" style="top: 85px;">
+                <h5 class="fs-6 fw-bold mb-3 text-dark border-bottom pb-2">
+                    <i class="bi bi-calculator text-primary me-1"></i> Price Breakdown
+                </h5>
+
+                <div class="d-flex justify-content-between py-2 border-bottom">
+                    <span class="text-muted small">Estimated Duration:</span>
+                    <span class="fw-semibold text-dark" id="est-duration">-- hrs</span>
+                </div>
+                <div class="d-flex justify-content-between py-2 border-bottom">
+                    <span class="text-muted small">Hourly Slot Rate:</span>
+                    <span class="fw-semibold text-dark" id="est-rate">--/hr</span>
+                </div>
+                <div class="d-flex justify-content-between py-3 mb-3 border-bottom">
+                    <span class="fw-bold text-dark fs-6">Estimated Total:</span>
+                    <span class="fw-bold text-primary fs-5" id="est-total">$0.00</span>
+                </div>
+
+                <div id="estimate-error" class="text-danger small mb-3"></div>
+
+                <div class="alert alert-light border small text-muted mb-4">
+                    <i class="bi bi-shield-check text-success me-1"></i>
+                    Availability is dynamically re-validated by the database server upon confirmation to strictly prevent double bookings.
+                </div>
+
+                <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold shadow-sm mb-2" id="btn-submit-booking">
+                    <i class="bi bi-check-circle me-1"></i> Confirm & Book Slot
+                </button>
+                <a href="{{ url_for('reservations.index') }}" class="btn btn-outline-secondary w-100 btn-sm">
+                    Cancel
+                </a>
+            </div>
+        </div>
+    </div>
+</form>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/parking.js') }}"></script>
+{% endblock %}

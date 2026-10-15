@@ -1,0 +1,208 @@
+{% extends "base.html" %}
+
+{% block title %}Reservation Management{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+    <div>
+        <h2 class="h4 fw-bold mb-1">Reservation Management</h2>
+        <p class="text-muted small mb-0">Manage customer bookings, schedule time windows, track vehicle arrivals, and audit histories.</p>
+    </div>
+    <div class="d-flex align-items-center gap-2">
+        <a href="{{ url_for('reservations.export_csv') }}" class="btn btn-outline-secondary btn-sm d-flex align-items-center gap-1 shadow-sm">
+            <i class="bi bi-download"></i>
+            <span>Export CSV</span>
+        </a>
+        <a href="{{ url_for('reservations.new_reservation') }}" class="btn btn-primary btn-sm d-flex align-items-center gap-1 shadow-sm">
+            <i class="bi bi-calendar-plus"></i>
+            <span>New Reservation</span>
+        </a>
+    </div>
+</div>
+
+<!-- Search & Filter Card -->
+<div class="card-modern p-3 mb-4">
+    <form method="GET" action="{{ url_for('reservations.index') }}" class="row g-2 align-items-center">
+        <div class="col-12 col-md-4">
+            <div class="input-group input-group-sm">
+                <span class="input-group-text bg-light text-muted"><i class="bi bi-search"></i></span>
+                <input type="text" class="form-control" name="search" placeholder="Search code, customer, plate, or slot..." value="{{ search }}">
+            </div>
+        </div>
+
+        <div class="col-6 col-md-2">
+            <select name="status" class="form-select form-select-sm">
+                <option value="">All Statuses</option>
+                <option value="reserved" {% if selected_status == 'reserved' %}selected{% endif %}>Reserved</option>
+                <option value="active" {% if selected_status == 'active' %}selected{% endif %}>Active (Checked In)</option>
+                <option value="completed" {% if selected_status == 'completed' %}selected{% endif %}>Completed</option>
+                <option value="cancelled" {% if selected_status == 'cancelled' %}selected{% endif %}>Cancelled</option>
+            </select>
+        </div>
+
+        <div class="col-6 col-md-2">
+            <input type="date" name="date_from" class="form-control form-control-sm" value="{{ date_from }}" title="Start Date Filter">
+        </div>
+
+        <div class="col-6 col-md-2">
+            <input type="date" name="date_to" class="form-control form-control-sm" value="{{ date_to }}" title="End Date Filter">
+        </div>
+
+        <div class="col-6 col-md-2 d-flex gap-2">
+            <button type="submit" class="btn btn-primary btn-sm w-100">Filter</button>
+            {% if search or selected_status or date_from or date_to %}
+            <a href="{{ url_for('reservations.index') }}" class="btn btn-outline-secondary btn-sm" title="Clear Filters">
+                <i class="bi bi-x-lg"></i>
+            </a>
+            {% endif %}
+        </div>
+    </form>
+</div>
+
+<!-- Reservations Table Card -->
+<div class="card-modern">
+    <div class="card-header-modern">
+        <h6 class="card-title-modern">
+            <i class="bi bi-calendar-check text-primary"></i>
+            <span>All Bookings ({{ reservations|length }})</span>
+        </h6>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-modern align-middle">
+            <thead>
+                <tr>
+                    <th>Reservation Code</th>
+                    <th>Customer</th>
+                    <th>Vehicle Plate</th>
+                    <th>Slot & Zone</th>
+                    <th>Time Window</th>
+                    <th>Duration & Rate</th>
+                    <th>Estimated Fee</th>
+                    <th>Booking Status</th>
+                    <th>Payment</th>
+                    <th class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in reservations %}
+                <tr>
+                    <td>
+                        <a href="{{ url_for('reservations.details', res_id=r.id) }}" class="fw-bold text-primary text-decoration-none">
+                            {{ r.reservation_code }}
+                        </a>
+                        <div class="text-muted small" style="font-size: 0.72rem;">{{ r.created_at | datetime_format('%b %d, %H:%M') }}</div>
+                    </td>
+                    <td>
+                        <div class="fw-semibold">{{ r.customer_name }}</div>
+                        <div class="text-muted small" style="font-size: 0.75rem;">{{ r.customer_phone or 'No phone' }}</div>
+                    </td>
+                    <td>
+                        <span class="badge bg-light text-dark border px-2 py-1 font-monospace">{{ r.plate_number }}</span>
+                    </td>
+                    <td>
+                        <span class="fw-bold">{{ r.slot_number }}</span>
+                        <div class="text-muted small" style="font-size: 0.75rem;">{{ r.area_name }}</div>
+                    </td>
+                    <td>
+                        <div class="small fw-medium">{{ r.start_time | datetime_format('%b %d, %I:%M %p') }}</div>
+                        <div class="text-muted small" style="font-size: 0.75rem;">to {{ r.end_time | datetime_format('%b %d, %I:%M %p') }}</div>
+                    </td>
+                    <td>
+                        <div>{{ r.duration_hours }} hrs</div>
+                        <div class="text-muted small" style="font-size: 0.75rem;">@ ${{ "%.2f"|format(r.hourly_rate) }}/hr</div>
+                    </td>
+                    <td>
+                        <span class="fw-bold text-dark">${{ "%.2f"|format(r.estimated_amount) }}</span>
+                    </td>
+                    <td>
+                        <span class="badge-status {{ r.status }}">
+                            <span class="status-dot {{ r.status }}"></span> {{ r.status }}
+                        </span>
+                    </td>
+                    <td>
+                        {% if r.payment_status == 'paid' %}
+                            <span class="badge bg-success-subtle text-success border border-success-subtle">
+                                <i class="bi bi-check-circle me-1"></i>Paid
+                            </span>
+                        {% else %}
+                            <span class="badge bg-warning-subtle text-warning border border-warning-subtle">
+                                <i class="bi bi-clock me-1"></i>Pending
+                            </span>
+                        {% endif %}
+                    </td>
+                    <td class="text-end">
+                        <div class="btn-group btn-group-sm">
+                            <a href="{{ url_for('reservations.details', res_id=r.id) }}" class="btn btn-light border" title="View Details">
+                                <i class="bi bi-eye"></i>
+                            </a>
+
+                            {% if r.status == 'reserved' %}
+                            <!-- Check In Shortcut -->
+                            <form method="POST" action="{{ url_for('occupancy.check_in') }}" class="d-inline">
+                                <input type="hidden" name="reservation_id" value="{{ r.id }}">
+                                <button type="submit" class="btn btn-light border text-success" title="Check-In Vehicle">
+                                    <i class="bi bi-box-arrow-in-right"></i>
+                                </button>
+                            </form>
+
+                            <!-- Cancel Button Trigger -->
+                            <button type="button" class="btn btn-light border text-danger" data-bs-toggle="modal" data-bs-target="#cancelModal{{ r.id }}" title="Cancel Booking">
+                                <i class="bi bi-x-circle"></i>
+                            </button>
+                            {% elif r.status == 'active' %}
+                            <!-- Check Out Shortcut -->
+                            <form method="POST" action="{{ url_for('occupancy.check_out') }}" class="d-inline">
+                                <input type="hidden" name="reservation_id" value="{{ r.id }}">
+                                <button type="submit" class="btn btn-light border text-primary" title="Check-Out Vehicle">
+                                    <i class="bi bi-box-arrow-right"></i>
+                                </button>
+                            </form>
+                            {% endif %}
+                        </div>
+
+                        <!-- Cancel Modal -->
+                        {% if r.status == 'reserved' %}
+                        <div class="modal fade" id="cancelModal{{ r.id }}" tabindex="-1" aria-hidden="true">
+                            <div class="modal-dialog modal-dialog-centered">
+                                <div class="modal-content border-0 shadow">
+                                    <div class="modal-header bg-danger text-white">
+                                        <h5 class="modal-title fs-6 fw-bold">Cancel Reservation</h5>
+                                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                    </div>
+                                    <form method="POST" action="{{ url_for('reservations.cancel', res_id=r.id) }}">
+                                        <div class="modal-body p-4 text-start">
+                                            <p>Are you sure you want to cancel booking <strong>{{ r.reservation_code }}</strong> for <strong>{{ r.customer_name }}</strong>?</p>
+                                            <div class="mb-3">
+                                                <label class="form-label small fw-semibold">Cancellation Reason</label>
+                                                <input type="text" name="reason" class="form-control form-control-sm" placeholder="e.g. Customer requested, vehicle breakdown" value="Customer requested cancellation">
+                                            </div>
+                                            <div class="alert alert-info small mb-0">
+                                                <i class="bi bi-info-circle me-1"></i> Cancelling releases slot <strong>{{ r.slot_number }}</strong> back to Available status.
+                                            </div>
+                                        </div>
+                                        <div class="modal-footer bg-light">
+                                            <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Keep Booking</button>
+                                            <button type="submit" class="btn btn-danger btn-sm">Confirm Cancellation</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="10" class="text-center py-5 text-muted">
+                        <i class="bi bi-calendar-x fs-2 d-block mb-2 text-secondary"></i>
+                        No reservations found matching your criteria.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

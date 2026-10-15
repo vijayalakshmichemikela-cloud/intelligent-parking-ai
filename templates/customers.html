@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+
+{% block title %}Customer Directory{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+    <div>
+        <h2 class="h4 fw-bold mb-1">Customer & Vehicle Management</h2>
+        <p class="text-muted small mb-0">Inspect customer profiles, registered vehicles, lifetime reservations, and payment histories.</p>
+    </div>
+</div>
+
+<!-- Search Card -->
+<div class="card-modern p-3 mb-4">
+    <form method="GET" action="{{ url_for('customers.index') }}" class="row g-2 align-items-center">
+        <div class="col-12 col-md-6">
+            <div class="input-group input-group-sm">
+                <span class="input-group-text bg-light text-muted"><i class="bi bi-search"></i></span>
+                <input type="text" class="form-control" name="search" placeholder="Search customer name, phone, email, or vehicle plate..." value="{{ search }}">
+            </div>
+        </div>
+        <div class="col-6 col-md-2 d-flex gap-2">
+            <button type="submit" class="btn btn-primary btn-sm w-100">Search</button>
+            {% if search %}
+            <a href="{{ url_for('customers.index') }}" class="btn btn-outline-secondary btn-sm" title="Clear Search">
+                <i class="bi bi-x-lg"></i>
+            </a>
+            {% endif %}
+        </div>
+    </form>
+</div>
+
+<!-- Customers Table Card -->
+<div class="card-modern">
+    <div class="card-header-modern">
+        <h6 class="card-title-modern">
+            <i class="bi bi-people text-primary"></i> Registered Customers ({{ customers|length }})
+        </h6>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-modern align-middle">
+            <thead>
+                <tr>
+                    <th>Customer Name</th>
+                    <th>Contact Info</th>
+                    <th>Registered Vehicles</th>
+                    <th>Total Bookings</th>
+                    <th>Total Paid</th>
+                    <th>Member Since</th>
+                    <th class="text-end">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for c in customers %}
+                <tr>
+                    <td>
+                        <a href="{{ url_for('customers.details', customer_id=c.id) }}" class="fw-bold text-primary text-decoration-none">
+                            {{ c.name }}
+                        </a>
+                    </td>
+                    <td>
+                        <div class="small">{{ c.phone or 'No phone' }}</div>
+                        <div class="text-muted small">{{ c.email or 'No email' }}</div>
+                    </td>
+                    <td>
+                        {% if c.plates_list %}
+                            {% for plate in c.plates_list.split(',') %}
+                            <span class="badge bg-light text-dark border font-monospace me-1">{{ plate }}</span>
+                            {% endfor %}
+                        {% else %}
+                            <span class="text-muted small">None</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1">
+                            {{ c.reservations_count }} bookings
+                        </span>
+                    </td>
+                    <td>
+                        <span class="fw-bold text-success">${{ "%.2f"|format(c.total_spent) }}</span>
+                    </td>
+                    <td>
+                        <span class="text-muted small">{{ c.created_at | datetime_format('%b %d, %Y') }}</span>
+                    </td>
+                    <td class="text-end">
+                        <a href="{{ url_for('customers.details', customer_id=c.id) }}" class="btn btn-sm btn-light border py-1 px-2" title="View Full Profile">
+                            <i class="bi bi-person-lines-fill me-1"></i> Profile
+                        </a>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="7" class="text-center py-5 text-muted">
+                        <i class="bi bi-people fs-2 d-block mb-2 text-secondary"></i>
+                        No customer profiles found matching your search.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

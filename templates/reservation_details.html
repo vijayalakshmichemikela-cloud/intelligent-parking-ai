@@ -1,0 +1,255 @@
+{% extends "base.html" %}
+
+{% block title %}Reservation {{ res.reservation_code }}{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="mb-4">
+    <a href="{{ url_for('reservations.index') }}" class="text-decoration-none text-muted small d-inline-flex align-items-center gap-1 mb-2">
+        <i class="bi bi-arrow-left"></i> Back to Reservations
+    </a>
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+        <div>
+            <div class="d-flex align-items-center gap-3">
+                <h2 class="h4 fw-bold mb-0">{{ res.reservation_code }}</h2>
+                <span class="badge-status {{ res.status }} fs-6">
+                    <span class="status-dot {{ res.status }}"></span> {{ res.status }}
+                </span>
+            </div>
+            <p class="text-muted small mb-0 mt-1">Booked on {{ res.created_at | datetime_format('%B %d, %Y at %I:%M %p') }}</p>
+        </div>
+        <div class="d-flex gap-2">
+            {% if res.status == 'reserved' %}
+            <form method="POST" action="{{ url_for('occupancy.check_in') }}">
+                <input type="hidden" name="reservation_id" value="{{ res.id }}">
+                <button type="submit" class="btn btn-success btn-sm shadow-sm">
+                    <i class="bi bi-box-arrow-in-right me-1"></i> Check In Vehicle
+                </button>
+            </form>
+            <button class="btn btn-outline-danger btn-sm" data-bs-toggle="modal" data-bs-target="#cancelModal">
+                <i class="bi bi-x-circle me-1"></i> Cancel Booking
+            </button>
+            {% elif res.status == 'active' %}
+            <form method="POST" action="{{ url_for('occupancy.check_out') }}">
+                <input type="hidden" name="reservation_id" value="{{ res.id }}">
+                <button type="submit" class="btn btn-primary btn-sm shadow-sm">
+                    <i class="bi bi-box-arrow-right me-1"></i> Check Out Vehicle
+                </button>
+            </form>
+            {% endif %}
+
+            {% if res.payment_id %}
+            <a href="{{ url_for('payments.receipt', payment_id=res.payment_id) }}" class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-printer me-1"></i> View Receipt
+            </a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Customer & Vehicle Cards -->
+    <div class="col-12 col-md-6 col-xl-4">
+        <div class="card-modern p-4 h-100">
+            <h6 class="fw-bold text-dark border-bottom pb-2 mb-3">
+                <i class="bi bi-person text-primary me-1"></i> Customer Profile
+            </h6>
+            <div class="mb-2">
+                <span class="text-muted small d-block">Full Name</span>
+                <span class="fw-semibold fs-6">{{ res.customer_name }}</span>
+            </div>
+            <div class="mb-2">
+                <span class="text-muted small d-block">Phone Number</span>
+                <span>{{ res.customer_phone or 'Not provided' }}</span>
+            </div>
+            <div class="mb-3">
+                <span class="text-muted small d-block">Email Address</span>
+                <span>{{ res.customer_email or 'Not provided' }}</span>
+            </div>
+            <hr class="text-muted">
+            <h6 class="fw-bold text-dark mb-3">
+                <i class="bi bi-car-front text-primary me-1"></i> Vehicle Registered
+            </h6>
+            <div class="mb-2">
+                <span class="text-muted small d-block">License Plate</span>
+                <span class="badge bg-light text-dark border font-monospace fs-6 px-2 py-1">{{ res.plate_number }}</span>
+            </div>
+            <div class="mb-1">
+                <span class="text-muted small d-block">Type & Model</span>
+                <span>{{ res.vehicle_type }} &bull; {{ res.vehicle_model or 'Standard Model' }}</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Parking Space & Schedule Card -->
+    <div class="col-12 col-md-6 col-xl-4">
+        <div class="card-modern p-4 h-100">
+            <h6 class="fw-bold text-dark border-bottom pb-2 mb-3">
+                <i class="bi bi-signpost-split text-primary me-1"></i> Parking Space & Zone
+            </h6>
+            <div class="d-flex align-items-center justify-content-between mb-3 p-3 bg-light rounded border">
+                <div>
+                    <span class="text-muted small d-block">Assigned Slot</span>
+                    <span class="fw-bold fs-4 text-dark">{{ res.slot_number }}</span>
+                </div>
+                <div class="text-end">
+                    <span class="badge bg-primary text-white text-uppercase" style="font-size: 0.75rem;">{{ res.slot_type }}</span>
+                    <div class="text-muted small mt-1">{{ res.area_name }}</div>
+                </div>
+            </div>
+
+            <h6 class="fw-bold text-dark mb-2">Schedule Timeframe</h6>
+            <div class="mb-2">
+                <span class="text-muted small d-block">Scheduled Start</span>
+                <span class="fw-medium">{{ res.start_time | datetime_format }}</span>
+            </div>
+            <div class="mb-2">
+                <span class="text-muted small d-block">Scheduled End</span>
+                <span class="fw-medium">{{ res.end_time | datetime_format }}</span>
+            </div>
+            <div class="mb-3">
+                <span class="text-muted small d-block">Duration</span>
+                <span>{{ res.duration_hours }} hours (@ ${{ "%.2f"|format(res.hourly_rate) }}/hr)</span>
+            </div>
+
+            {% if res.check_in_time %}
+            <div class="p-2 bg-success-subtle text-success border border-success-subtle rounded small">
+                <i class="bi bi-clock-history me-1"></i> Checked in: {{ res.check_in_time | datetime_format }}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Billing & Payment Status Card -->
+    <div class="col-12 col-xl-4">
+        <div class="card-modern p-4 h-100">
+            <h6 class="fw-bold text-dark border-bottom pb-2 mb-3">
+                <i class="bi bi-credit-card text-primary me-1"></i> Payment & Billing
+            </h6>
+            
+            <div class="d-flex justify-content-between py-2 border-bottom">
+                <span class="text-muted small">Estimated Charge</span>
+                <span class="fw-bold fs-5 text-dark">${{ "%.2f"|format(res.estimated_amount) }}</span>
+            </div>
+            <div class="d-flex justify-content-between py-2 border-bottom">
+                <span class="text-muted small">Payment Status</span>
+                <div>
+                    {% if res.payment_status == 'paid' %}
+                        <span class="badge bg-success-subtle text-success border border-success-subtle">
+                            <i class="bi bi-check-circle me-1"></i>PAID
+                        </span>
+                    {% else %}
+                        <span class="badge bg-warning-subtle text-warning border border-warning-subtle">
+                            <i class="bi bi-hourglass me-1"></i>PENDING
+                        </span>
+                    {% endif %}
+                </div>
+            </div>
+
+            {% if res.payment_id %}
+            <div class="py-2 border-bottom">
+                <span class="text-muted small d-block">Transaction Ref</span>
+                <span class="font-monospace small text-truncate d-block">{{ res.transaction_ref or 'TXN-PENDING' }}</span>
+            </div>
+            <div class="py-2 border-bottom">
+                <span class="text-muted small d-block">Payment Method</span>
+                <span class="small">{{ res.payment_method or 'Pending Settlement' }}</span>
+            </div>
+            {% endif %}
+
+            <div class="mt-4">
+                {% if res.payment_status != 'paid' and res.payment_id %}
+                <button class="btn btn-primary w-100 shadow-sm" data-bs-toggle="modal" data-bs-target="#demoPaymentModal">
+                    <i class="bi bi-credit-card-2-front me-1"></i> Process Demo Payment
+                </button>
+                {% elif res.payment_id %}
+                <a href="{{ url_for('payments.receipt', payment_id=res.payment_id) }}" class="btn btn-outline-primary w-100">
+                    <i class="bi bi-printer me-1"></i> Print Formal Receipt
+                </a>
+                {% endif %}
+            </div>
+
+            {% if res.notes %}
+            <div class="mt-3 p-2 bg-light rounded border small text-muted">
+                <strong>Remarks:</strong> {{ res.notes }}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Demo Payment -->
+{% if res.payment_id and res.payment_status != 'paid' %}
+<div class="modal fade" id="demoPaymentModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title fs-6 fw-bold"><i class="bi bi-wallet2 me-2"></i>Simulated Payment Gateway</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{{ url_for('payments.process_demo', payment_id=res.payment_id) }}">
+                <div class="modal-body p-4">
+                    <div class="alert alert-info small mb-3">
+                        <i class="bi bi-info-circle me-1"></i> <strong>Demo Gateway Sandbox:</strong> No actual card charge will occur. Select an outcome to simulate.
+                    </div>
+                    
+                    <div class="mb-3 text-center py-2 bg-light rounded border">
+                        <span class="text-muted small d-block">Amount Due</span>
+                        <span class="fw-bold fs-3 text-primary">${{ "%.2f"|format(res.estimated_amount) }}</span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Payment Channel</label>
+                        <select name="payment_method" class="form-select">
+                            <option value="Credit Card (Demo)">Credit Card (Visa/Mastercard Demo)</option>
+                            <option value="UPI / QR (Demo)">UPI / Instant QR Code</option>
+                            <option value="Cash Counter">Cash Counter Settlement</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Simulation Outcome</label>
+                        <select name="simulate_status" class="form-select">
+                            <option value="paid" selected>Success (Approved & Paid)</option>
+                            <option value="failed">Decline (Simulated Insufficient Funds)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success btn-sm">Submit Simulated Payment</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Modal: Cancel Reservation -->
+{% if res.status == 'reserved' %}
+<div class="modal fade" id="cancelModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title fs-6 fw-bold">Cancel Reservation</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{{ url_for('reservations.cancel', res_id=res.id) }}">
+                <div class="modal-body p-4">
+                    <p>Are you sure you want to cancel reservation <strong>{{ res.reservation_code }}</strong>?</p>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Reason for Cancellation</label>
+                        <input type="text" name="reason" class="form-control" value="Customer requested cancellation" required>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-danger btn-sm">Confirm Cancellation</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}
