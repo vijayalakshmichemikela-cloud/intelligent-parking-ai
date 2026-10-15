@@ -24,6 +24,5 @@ class Config:
     DB_NAME      = os.getenv('DB_NAME', 'smart_parking_db')
 
     # SQLite fallback path (used automatically when MySQL is unavailable)
-    SQLITE_PATH  = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'smart_parking.db')
-
+    SQLITE_PATH = "/tmp/smart_parking.db"
     APP_TIMEZONE = os.getenv('APP_TIMEZONE', 'UTC')

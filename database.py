@@ -497,5 +497,9 @@ def init_sqlite_db():
 
 
 # Initialize SQLite if running under SQLite engine
-if get_active_engine() == 'sqlite':
-    init_sqlite_db()
+try:
+    if get_active_engine() == 'sqlite':
+        init_sqlite_db()
+except Exception as e:
+    print(f"DB init skipped: {e}")
+
